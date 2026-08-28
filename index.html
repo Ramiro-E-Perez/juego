@@ -42,6 +42,7 @@
     border-left: 2px solid #1f2833;
     border-right: 2px solid #1f2833;
     min-width: 320px;
+    position: relative;
   }
 
   h2, h3 {
@@ -52,7 +53,25 @@
   }
   h2 { text-shadow: 0 0 10px rgba(102, 252, 241, 0.5); margin-bottom: 20px;}
   
-  /* Tabla de Premios (Izquierda) */
+  /* Banner de Objetivo (NUEVO) */
+  .jackpot-banner {
+    background: linear-gradient(90deg, #ff4c4c, #ffb800, #ff4c4c);
+    background-size: 200% 200%;
+    color: #000;
+    font-weight: bold;
+    font-size: 1.1rem;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    animation: gradientShift 2s ease infinite, pulse 1.5s infinite;
+    box-shadow: 0 0 15px rgba(255, 184, 0, 0.6);
+  }
+
+  @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+  /* Tabla de Premios */
   .paytable-list {
     list-style: none;
     padding: 0;
@@ -142,25 +161,14 @@
     transition: 0.2s;
     margin-bottom: 10px;
   }
-  button:hover { background: #45a29e; color: white; }
+  button:hover:not(:disabled) { background: #45a29e; color: white; }
   button:disabled { background: #333; color: #666; cursor: not-allowed; }
   
-  .btn-buy {
-    background: #ffb800;
-  }
+  .btn-buy { background: #ffb800; }
   .btn-buy:hover:not(:disabled) { background: #e6a600; }
-  .btn-buy:disabled {
-    background: #444; /* Gris oscuro para indicar que está bloqueado */
-    color: #777;
-    cursor: not-allowed;
-  }
+  .btn-buy:disabled { background: #444; color: #777; }
   
-  .btn-logout {
-    background: #ff4c4c;
-    color: white;
-    font-size: 1rem;
-    padding: 10px;
-  }
+  .btn-logout { background: #ff4c4c; color: white; font-size: 1rem; padding: 10px; }
   .btn-logout:hover { background: #cc0000; }
 
   #message { 
@@ -169,6 +177,15 @@
     min-height: 2em; 
     margin-bottom: 15px; 
     color: #c5c6c7;
+  }
+  
+  /* Mensaje de Victoria Final */
+  .victory-msg {
+    font-size: 1.8rem;
+    color: #ffb800;
+    text-shadow: 0 0 15px #ffb800;
+    animation: pulse 1s infinite;
+    margin: 20px 0;
   }
 
   /* Historial (Derecha) */
@@ -187,14 +204,8 @@
     font-size: 0.95rem;
     border-left: 4px solid #ffb800;
   }
-  .history-name {
-    font-weight: bold;
-    color: #66fcf1;
-    display: block;
-  }
-  .history-action {
-    color: #c5c6c7;
-  }
+  .history-name { font-weight: bold; color: #66fcf1; display: block; }
+  .history-action { color: #c5c6c7; }
 </style>
 </head>
 <body>
@@ -227,6 +238,9 @@
 
       <!-- Pantalla de Slots -->
       <div id="game-screen">
+        <!-- BANNER DE OBJETIVO -->
+        <div class="jackpot-banner">🔥 ¡Llega a 200 créditos para ganar el PREMIO MAYOR! 🔥</div>
+
         <h2 id="welcome-msg">¡Suerte!</h2>
         <div class="stats">Créditos: <span id="credits">100</span></div>
         
@@ -251,9 +265,7 @@
     <div class="side-panel">
       <h3>Historial de Compras</h3>
       <p style="font-size: 0.85rem; text-align: center; color: #888;">Registro de recargas en la máquina</p>
-      <ul class="history-list" id="historyBoard">
-        <!-- El historial se genera por JS -->
-      </ul>
+      <ul class="history-list" id="historyBoard"></ul>
     </div>
   </div>
 
@@ -263,6 +275,7 @@
     const cost = 10;
     let spinCount = 0;
     let currentPlayerName = "";
+    let hasWonGrandPrize = false;
     
     let purchaseHistory = [];
 
@@ -278,6 +291,7 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
       
+      hasWonGrandPrize = false;
       buyChips();
     }
 
@@ -287,7 +301,6 @@
       
       updateCreditsDisplay();
       
-      // Habilitar botón de girar y BLOQUEAR el botón de comprar
       document.getElementById('spinButton').style.display = 'block';
       document.getElementById('spinButton').disabled = false;
       document.getElementById('buyButton').disabled = true;
@@ -295,6 +308,7 @@
       let msg = document.getElementById('message');
       msg.innerText = '¡Fichas cargadas! Gira los rodillos.';
       msg.style.color = '#c5c6c7';
+      msg.classList.remove('victory-msg');
 
       purchaseHistory.unshift({
         name: currentPlayerName,
@@ -314,10 +328,11 @@
       document.getElementById('slot1').innerText = '💎';
       document.getElementById('slot2').innerText = '💎';
       document.getElementById('slot3').innerText = '💎';
+      document.getElementById('message').classList.remove('victory-msg');
     }
 
     function spin() {
-      if (credits < cost) return;
+      if (credits < cost || hasWonGrandPrize) return;
       
       credits -= cost;
       spinCount++;
@@ -325,8 +340,6 @@
       
       const btn = document.getElementById('spinButton');
       btn.disabled = true;
-      
-      // Asegurarnos de que el botón de comprar siga bloqueado mientras gira
       document.getElementById('buyButton').disabled = true; 
       
       document.getElementById('message').innerText = "Girando...";
@@ -348,19 +361,32 @@
       let s1, s2, s3;
       let win = 0;
 
+      // LA TRAMPA: Probabilidades diseñadas para vaciar el saldo lentamente
       if (spinCount === 2) {
+        // Cebo psicológico: Empieza ganando
         s1 = s2 = s3 = '7️⃣';
         win = 60; 
       } else if (credits < 20 && spinCount > 5) {
+        // Cebo del "Casi acierto" para frustrar y enganchar
         s1 = '💎'; s2 = '💎'; s3 = '🍒';
       } else {
-        if (Math.random() > 0.88) {
+        // Probabilidad general
+        let chance = Math.random();
+        
+        if (chance > 0.99) {
+           // Milagro: 1% de chance de ganar algo mediano (Campanas)
+           s1 = s2 = s3 = '🔔';
+           win = 40;
+        } else if (chance > 0.88) {
+           // Premio consuelo: 11% de chance de recuperar 15 (Cerezas)
            s1 = s2 = s3 = '🍒';
            win = 15;
         } else {
+           // Pierde el 88% de las veces
            s1 = symbols[Math.floor(Math.random() * symbols.length)];
            s2 = symbols[Math.floor(Math.random() * symbols.length)];
            s3 = symbols[Math.floor(Math.random() * symbols.length)];
+           // Asegurar que visualmente no haya combinaciones ganadoras
            while (s1 === s2 && s2 === s3) {
              s3 = symbols[Math.floor(Math.random() * symbols.length)];
            }
@@ -386,6 +412,17 @@
       const btn = document.getElementById('spinButton');
       const buyBtn = document.getElementById('buyButton');
 
+      // 1. EVALUAR SI LLEGÓ A 200 (Condición de Victoria)
+      if (credits >= 200) {
+        hasWonGrandPrize = true;
+        msg.innerHTML = "🎉 ¡FELICIDADES! 🎉<br>¡HAS GANADO EL PREMIO MAYOR!";
+        msg.classList.add('victory-msg');
+        btn.style.display = 'none'; // Se acaba el juego, no tira más
+        buyBtn.disabled = true;
+        return; // Salir de la función para no pisar el mensaje
+      }
+
+      // 2. MENSAJES DE PREMIOS NORMALES
       if (win > 0) {
         msg.innerText = `¡GOLPE DE SUERTE! Ganaste ${win} créditos.`;
         msg.style.color = '#66fcf1';
@@ -394,16 +431,16 @@
         msg.style.color = '#c5c6c7';
       }
 
-      // Lógica para bloquear/desbloquear botones según saldo
+      // 3. EVALUAR SI SE QUEDÓ SIN CRÉDITOS
       if (credits < cost) {
         msg.innerText = '⚠️ TE QUEDASTE SIN CRÉDITOS ⚠️';
         msg.style.color = '#ff4c4c';
         
         btn.style.display = 'none'; // Oculta el botón de tirar
-        buyBtn.disabled = false;    // DESBLOQUEA el botón de comprar fichas
+        buyBtn.disabled = false;    // Desbloquea el botón de comprar
       } else {
         btn.disabled = false;
-        buyBtn.disabled = true;     // MANTIENE BLOQUEADO el botón de comprar
+        buyBtn.disabled = true;     // Mantiene bloqueado el botón de comprar
       }
     }
 
