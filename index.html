@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slots - Simulador Educativo</title>
+<style>
+  * { box-sizing: border-box; }
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #0b0c10; 
+    color: #c5c6c7; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1100px;
+    background: #1f2833;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    overflow: hidden;
+  }
+  
+  /* Paneles */
+  .side-panel {
+    flex: 1;
+    background: #0b0c10;
+    padding: 20px;
+    min-width: 250px;
+  }
+  .game-panel {
+    flex: 2;
+    padding: 30px;
+    text-align: center;
+    border-left: 2px solid #1f2833;
+    border-right: 2px solid #1f2833;
+    min-width: 320px;
+  }
+
+  h2, h3 {
+    color: #66fcf1;
+    text-transform: uppercase;
+    margin-top: 0;
+    text-align: center;
+  }
+  h2 { text-shadow: 0 0 10px rgba(102, 252, 241, 0.5); margin-bottom: 20px;}
+  
+  /* Tabla de Premios (Izquierda) */
+  .paytable-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .paytable-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1f2833;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  .cost-info {
+    text-align: center;
+    color: #ff4c4c;
+    font-weight: bold;
+    margin-top: 15px;
+    font-size: 1.1rem;
+  }
+
+  /* Pantalla de Login */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 350px;
+  }
+  input[type="text"] {
+    padding: 12px;
+    font-size: 1.2rem;
+    border-radius: 5px;
+    border: none;
+    margin-bottom: 20px;
+    width: 80%;
+    text-align: center;
+  }
+  
+  /* Juego (Centro) */
+  #game-screen { display: none; }
+  .stats { 
+    font-size: 1.5rem; 
+    margin-bottom: 20px; 
+    color: #45a29e;
+    background: rgba(0,0,0,0.4);
+    padding: 10px;
+    border-radius: 10px;
+  }
+  #credits { font-weight: bold; color: #fff; }
+  .slots { 
+    display: flex; 
+    justify-content: space-between; 
+    background: #12151c; 
+    padding: 20px; 
+    border-radius: 15px; 
+    margin-bottom: 25px;
+    box-shadow: inset 0 0 15px #000;
+  }
+  .slot { 
+    width: 70px; 
+    height: 70px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2.5rem;
+    background: #ffffff; 
+    border-radius: 8px; 
+  }
+  
+  /* Botones */
+  button { 
+    background: #66fcf1; 
+    color: #0b0c10;
+    border: none; 
+    padding: 15px 30px; 
+    font-size: 1.2rem; 
+    font-weight: bold; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    width: 100%;
+    text-transform: uppercase;
+    transition: 0.2s;
+    margin-bottom: 10px;
+  }
+  button:hover { background: #45a29e; color: white; }
+  button:disabled { background: #333; color: #666; cursor: not-allowed; }
+  
+  .btn-buy {
+    background: #ffb800;
+  }
+  .btn-buy:hover:not(:disabled) { background: #e6a600; }
+  .btn-buy:disabled {
+    background: #444; /* Gris oscuro para indicar que está bloqueado */
+    color: #777;
+    cursor: not-allowed;
+  }
+  
+  .btn-logout {
+    background: #ff4c4c;
+    color: white;
+    font-size: 1rem;
+    padding: 10px;
+  }
+  .btn-logout:hover { background: #cc0000; }
+
+  #message { 
+    font-size: 1.1rem;
+    font-weight: bold; 
+    min-height: 2em; 
+    margin-bottom: 15px; 
+    color: #c5c6c7;
+  }
+
+  /* Historial (Derecha) */
+  .history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .history-item {
+    background: #1f2833;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    border-left: 4px solid #ffb800;
+  }
+  .history-name {
+    font-weight: bold;
+    color: #66fcf1;
+    display: block;
+  }
+  .history-action {
+    color: #c5c6c7;
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Panel Izquierdo: Tabla de Premios -->
+    <div class="side-panel">
+      <h3>Premios</h3>
+      <ul class="paytable-list">
+        <li class="paytable-item"><span>💎💎💎</span> <span style="color:#66fcf1">+100</span></li>
+        <li class="paytable-item"><span>7️⃣7️⃣7️⃣</span> <span style="color:#66fcf1">+60</span></li>
+        <li class="paytable-item"><span>🔔🔔🔔</span> <span style="color:#66fcf1">+40</span></li>
+        <li class="paytable-item"><span>🍋🍋🍋</span> <span style="color:#66fcf1">+20</span></li>
+        <li class="paytable-item"><span>🍒🍒🍒</span> <span style="color:#66fcf1">+15</span></li>
+      </ul>
+      <div class="cost-info">Costo por tiro: -10 Créditos</div>
+    </div>
+
+    <!-- Panel Central: Juego -->
+    <div class="game-panel">
+      
+      <!-- Pantalla de Ingreso -->
+      <div id="login-screen">
+        <h2>🎰 Tragamonedas 🎰</h2>
+        <p>Ingresa tu nombre o el de tu grupo para empezar a jugar.</p>
+        <input type="text" id="playerName" placeholder="Ej: Grupo 3, Juan..." autocomplete="off">
+        <button onclick="startGame()">Comprar Fichas y Jugar</button>
+      </div>
+
+      <!-- Pantalla de Slots -->
+      <div id="game-screen">
+        <h2 id="welcome-msg">¡Suerte!</h2>
+        <div class="stats">Créditos: <span id="credits">100</span></div>
+        
+        <div class="slots">
+          <div class="slot" id="slot1">💎</div>
+          <div class="slot" id="slot2">💎</div>
+          <div class="slot" id="slot3">💎</div>
+        </div>
+        
+        <div id="message">¡Gira para multiplicar tus créditos!</div>
+        <button id="spinButton" onclick="spin()">TIRAR (-10 Créditos)</button>
+        
+        <hr style="border-color: #333; margin: 20px 0;">
+        
+        <!-- Botones de gestión -->
+        <button class="btn-buy" id="buyButton" onclick="buyChips()" disabled>💰 Comprar 100 Fichas Más</button>
+        <button class="btn-logout" onclick="changePlayer()">🔄 Cambiar de Jugador</button>
+      </div>
+    </div>
+
+    <!-- Panel Derecho: Historial de compras -->
+    <div class="side-panel">
+      <h3>Historial de Compras</h3>
+      <p style="font-size: 0.85rem; text-align: center; color: #888;">Registro de recargas en la máquina</p>
+      <ul class="history-list" id="historyBoard">
+        <!-- El historial se genera por JS -->
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const symbols = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
+    let credits = 0;
+    const cost = 10;
+    let spinCount = 0;
+    let currentPlayerName = "";
+    
+    let purchaseHistory = [];
+
+    function startGame() {
+      const nameInput = document.getElementById('playerName').value.trim();
+      if (!nameInput) {
+        alert("Por favor, ingresa un nombre para jugar.");
+        return;
+      }
+      currentPlayerName = nameInput;
+      document.getElementById('welcome-msg').innerText = `Jugador: ${currentPlayerName}`;
+      
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+      
+      buyChips();
+    }
+
+    function buyChips() {
+      credits += 100;
+      spinCount = 0;
+      
+      updateCreditsDisplay();
+      
+      // Habilitar botón de girar y BLOQUEAR el botón de comprar
+      document.getElementById('spinButton').style.display = 'block';
+      document.getElementById('spinButton').disabled = false;
+      document.getElementById('buyButton').disabled = true;
+      
+      let msg = document.getElementById('message');
+      msg.innerText = '¡Fichas cargadas! Gira los rodillos.';
+      msg.style.color = '#c5c6c7';
+
+      purchaseHistory.unshift({
+        name: currentPlayerName,
+        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      });
+      
+      updateHistoryBoard();
+    }
+
+    function changePlayer() {
+      currentPlayerName = "";
+      credits = 0;
+      document.getElementById('playerName').value = "";
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      
+      document.getElementById('slot1').innerText = '💎';
+      document.getElementById('slot2').innerText = '💎';
+      document.getElementById('slot3').innerText = '💎';
+    }
+
+    function spin() {
+      if (credits < cost) return;
+      
+      credits -= cost;
+      spinCount++;
+      updateCreditsDisplay();
+      
+      const btn = document.getElementById('spinButton');
+      btn.disabled = true;
+      
+      // Asegurarnos de que el botón de comprar siga bloqueado mientras gira
+      document.getElementById('buyButton').disabled = true; 
+      
+      document.getElementById('message').innerText = "Girando...";
+      document.getElementById('message').style.color = "#c5c6c7";
+
+      let interval = setInterval(() => {
+        document.getElementById('slot1').innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        document.getElementById('slot2').innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        document.getElementById('slot3').innerText = symbols[Math.floor(Math.random() * symbols.length)];
+      }, 80);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        determineOutcome();
+      }, 900);
+    }
+
+    function determineOutcome() {
+      let s1, s2, s3;
+      let win = 0;
+
+      if (spinCount === 2) {
+        s1 = s2 = s3 = '7️⃣';
+        win = 60; 
+      } else if (credits < 20 && spinCount > 5) {
+        s1 = '💎'; s2 = '💎'; s3 = '🍒';
+      } else {
+        if (Math.random() > 0.88) {
+           s1 = s2 = s3 = '🍒';
+           win = 15;
+        } else {
+           s1 = symbols[Math.floor(Math.random() * symbols.length)];
+           s2 = symbols[Math.floor(Math.random() * symbols.length)];
+           s3 = symbols[Math.floor(Math.random() * symbols.length)];
+           while (s1 === s2 && s2 === s3) {
+             s3 = symbols[Math.floor(Math.random() * symbols.length)];
+           }
+        }
+      }
+
+      document.getElementById('slot1').innerText = s1;
+      document.getElementById('slot2').innerText = s2;
+      document.getElementById('slot3').innerText = s3;
+
+      credits += win;
+      updateUI(win);
+    }
+
+    function updateCreditsDisplay() {
+      document.getElementById('credits').innerText = credits;
+    }
+
+    function updateUI(win) {
+      updateCreditsDisplay();
+      
+      let msg = document.getElementById('message');
+      const btn = document.getElementById('spinButton');
+      const buyBtn = document.getElementById('buyButton');
+
+      if (win > 0) {
+        msg.innerText = `¡GOLPE DE SUERTE! Ganaste ${win} créditos.`;
+        msg.style.color = '#66fcf1';
+      } else {
+        msg.innerText = '¡Uf! Estuviste cerca...';
+        msg.style.color = '#c5c6c7';
+      }
+
+      // Lógica para bloquear/desbloquear botones según saldo
+      if (credits < cost) {
+        msg.innerText = '⚠️ TE QUEDASTE SIN CRÉDITOS ⚠️';
+        msg.style.color = '#ff4c4c';
+        
+        btn.style.display = 'none'; // Oculta el botón de tirar
+        buyBtn.disabled = false;    // DESBLOQUEA el botón de comprar fichas
+      } else {
+        btn.disabled = false;
+        buyBtn.disabled = true;     // MANTIENE BLOQUEADO el botón de comprar
+      }
+    }
+
+    function updateHistoryBoard() {
+      const historyBoard = document.getElementById('historyBoard');
+      historyBoard.innerHTML = "";
+      
+      purchaseHistory.forEach((record) => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        
+        li.innerHTML = `
+          <span class="history-name">${record.name}</span>
+          <span class="history-action">Compró 100 Créditos (${record.time})</span>
+        `;
+        
+        historyBoard.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
